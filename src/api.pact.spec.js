@@ -15,6 +15,38 @@ describe('API Pact test', () => {
   afterAll(() => mockProvider.finalize());
 
   describe('retrieving a product', () => {
+
+    test('create new ID', async () => {
+      const expectedProduct = {id: '11', name: 'A Name', type: 'A Type'}
+
+      await mockProvider.addInteraction({
+        state: 'a product with ID 11 does not exists',
+        uponReceiving: 'a request to add a product',
+        withRequest: {
+          method: 'POST',
+          path: '/product/11',
+          body: { name: 'A Name', type: 'A Type' },
+          headers: {
+            Authorization: like('Bearer 2019-01-14T11:34:18.045Z'),
+          },
+        },
+        willRespondWith: {
+          status: 201,
+          headers: {
+            'Content-Type': regex({generate: 'application/json; charset=utf-8', matcher: 'application/json;?.*'}),
+          },
+          body: like(expectedProduct),
+        },
+      });
+
+      // Act
+      const api = new API(mockProvider.mockService.baseUrl);
+      const product = await api.postProduct('11', {name: 'A Name', type: 'A Type'});
+      
+      // Assert - did we get the expected response
+      expect(product).toStrictEqual(new Product(expectedProduct));
+    })
+
     test('ID 10 exists', async () => {
       // Arrange
       const expectedProduct = { id: '10', type: 'CREDIT_CARD', name: '28 Degrees'}
